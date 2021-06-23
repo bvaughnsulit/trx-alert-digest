@@ -62,7 +62,7 @@ function parseMsgs(msgs) {
     var trx = {}
     var normalizedText = msgs[msgIndex].body.replace(/\r?\n|\r/g, " ")
   
-    var extractedData = new RegExp(/ending in (\d{4}).+ charge of \(([^)]+)\) (\d+\.\d+) at (.+) has been authorized on (.+) at (\d{1,2}\:\d{2} \w{2} \w+)\./).exec(normalizedText)
+    var extractedData = new RegExp(/ending in (\d{4}).+ charge of \(([^)]+)\) ([,0-9]+\.\d+) at (.+) has been authorized on (.+) at (\d{1,2}\:\d{2} \w{2} \w+)\./).exec(normalizedText)
   
     trx.trxCardNumber = extractedData[1]
     trx.trxCurrency = extractedData[2]
