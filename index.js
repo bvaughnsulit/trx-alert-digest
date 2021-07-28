@@ -21,7 +21,7 @@ function getSheetId(){
 
 function getThreads() {
   var queryTimeframe = '48h'
-  var searchQuery = '(from:chase subject:"your single transaction alert from chase" newer_than:' + queryTimeframe + ')'
+  var searchQuery = '(from:no.reply.alerts@chase.com subject:"transaction with" newer_than:' + queryTimeframe + ')'
   var threads = []
   var start = 0
   do {
@@ -47,13 +47,19 @@ function extractMsgData(threads){
       var msgData = {}
       msgData.msgId = msg.getId()
       msgData.msgDate = msg.getDate()
-      msgData.body = msg.getBody()
+      msgData.body = cleanMsgBody(msg.getPlainBody())
       msgs.push(msgData)
     }    
   }
   return msgs
 }
 
+function cleanMsgBody(body){
+  // for whatever reason, the script hangs when trying to work with the raw response from getPlainBody()
+  // extracting the following substring seems to fix it ¯\_(ツ)_/¯
+  cleanedString = body.substring(body.indexOf("Transaction alert"),body.indexOf("You are receiving"))
+  return cleanedString
+}
 
 function parseMsgs(msgs) {
   var trxs = []
@@ -61,15 +67,13 @@ function parseMsgs(msgs) {
   for (var msgIndex in msgs){
     var trx = {}
     var normalizedText = msgs[msgIndex].body.replace(/\r?\n|\r/g, " ")
-  
-    var extractedData = new RegExp(/ending in (\d{4}).+ charge of \(([^)]+)\) ([,0-9]+\.\d+) at (.+) has been authorized on (.+) at (\d{1,2}\:\d{2} \w{2} \w+)\./).exec(normalizedText)
+    var extractedData = new RegExp(/Account .+ \(...(\d{4})\) +Date (.+) at (\d{1,2}\:\d{2} \w{2} \w+) + Merchant (.+) + Amount \$([,0-9]+\.\d+)/).exec(normalizedText)
   
     trx.trxCardNumber = extractedData[1]
-    trx.trxCurrency = extractedData[2]
-    trx.trxAmount = extractedData[3]
+    trx.trxDate = extractedData[2]
+    trx.trxTime = extractedData[3]
     trx.trxMerchant = extractedData[4]
-    trx.trxDate = extractedData[5]
-    trx.trxTime = extractedData[6]
+    trx.trxAmount = extractedData[5]
     trx.msgId = msgs[msgIndex].msgId
     trx.msgDate = msgs[msgIndex].msgDate
     
